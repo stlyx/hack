@@ -20,7 +20,7 @@ var Random = function() {
 }();
 
 function decryptMerge(str) {
-    if (!str || str.length < 10 || str.substring(8, 10) !== "$%") return null;
+    if (!str || str.length < 10 || str.substring(8, 10) !== "$%") throw "invalid merge: " + str;
     
     try {
         var seed = parseInt(str.substring(0, 8), 16);

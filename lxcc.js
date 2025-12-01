@@ -15,10 +15,7 @@ var Random = function() {
 }();
 
 function decryptMerge(str) {
-    if (!str || str.length < 10 || str.substring(8, 10) !== "$%") {
-        console.log("❌ Decrypt failed: Invalid format header");
-        return null;
-    }
+    if (!str || str.length < 10 || str.substring(8, 10) !== "$%") return null;
     try {
         var seed = parseInt(str.substring(0, 8), 16);
         var rng = new Random(seed);
@@ -51,109 +48,113 @@ function decryptMerge(str) {
 try {
     var obj = JSON.parse(body);
     
-    // 兼容 obj.archives 和 obj.data.archives
     var archives = null;
-    if (obj.archives) {
-        archives = obj.archives;
-    } else if (obj.data && obj.data.archives) {
-        archives = obj.data.archives;
-    }
+    if (obj.archives) archives = obj.archives;
+    else if (obj.data && obj.data.archives) archives = obj.data.archives;
 
     if (archives && Array.isArray(archives)) {
-        console.log("✅ 找到 archives 列表，长度: " + archives.length);
-        
         var mergeThree = archives.find(function(a) { return a.name === "MergeThree"; });
         
         if (mergeThree && mergeThree.data) {
-            console.log("✅ 找到 MergeThree 加密数据");
             var decryptedJsonStr = decryptMerge(mergeThree.data);
             
             if (decryptedJsonStr) {
-                console.log("✅ MergeThree 解密成功");
-                
-                // 尝试解析解密后的 JSON
                 var mergeData = JSON.parse(decryptedJsonStr);
                 
-                // 检查 mergeData 结构: [ID, Ver, [SubArchives...]]
                 if (Array.isArray(mergeData) && mergeData.length >= 3) {
                     var subArchives = mergeData[2];
-                    console.log("ℹ️ 子存档列表类型: " + (Array.isArray(subArchives) ? "Array" : typeof subArchives));
                     
                     var propsData = null;
                     if (subArchives && Array.isArray(subArchives)) {
-                        console.log("ℹ️ 遍历子存档寻找 Props (ID=1)...");
                         for (var i = 0; i < subArchives.length; i++) {
-                            // subArchives[i] 结构: [ArchiveID, Ver, Data]
-                            var subId = subArchives[i][0];
-                            // console.log("   - Index " + i + " ID: " + subId); 
-                            if (subId === 1) { // ID 1 是 PropsArchive
+                            if (subArchives[i][0] === 1) { // ID 1 是 PropsArchive
                                 propsData = subArchives[i][2];
-                                console.log("✅ 找到 PropsArchive (ID 1)");
+                                // console.log("✅ 找到 PropsArchive (ID 1)");
                                 break;
                             }
                         }
-                    } else {
-                        console.log("❌ MergeThree 数据结构异常: 索引2不是数组");
                     }
                     
                     if (propsData) {
-                        // PropsArchive 结构: { data: [ [普通道具], [加密道具] ] }
-                        // 通常加密道具在 data[1]
-                        if (propsData.data && Array.isArray(propsData.data) && propsData.data.length > 1) {
-                            var encryptedProps = propsData.data[1];
-                            console.log("ℹ️ 找到 EncryptedProps 列表，长度: " + (encryptedProps ? encryptedProps.length : "null"));
+                        // 【结构兼容修复】
+                        // 情况A: propsData 是对象 { data: [[], []] }
+                        // 情况B: propsData 直接是数组 [[], []]
+                        var encryptedProps = null;
+                        
+                        if (Array.isArray(propsData) && propsData.length > 1) {
+                            encryptedProps = propsData[1];
+                        } else if (propsData.data && Array.isArray(propsData.data) && propsData.data.length > 1) {
+                            encryptedProps = propsData.data[1];
+                        }
+
+                        if (encryptedProps && Array.isArray(encryptedProps)) {
+                            // console.log("ℹ️ 加密道具列表长度: " + encryptedProps.length);
                             
                             var coin = 0, gem = 0, power = 0;
                             var foundCount = 0;
                             
-                            if (encryptedProps) {
+                            // 【遍历方式兼容】
+                            // 判断是扁平数组 [id, val, id, val] 还是 嵌套数组 [[id, val], [id, val]]
+                            var isFlatArray = encryptedProps.length > 0 && typeof encryptedProps[0] === 'number';
+                            // console.log("ℹ️ 数组格式: " + (isFlatArray ? "扁平 [k,v,k,v]" : "嵌套 [[k,v]]"));
+
+                            if (isFlatArray) {
+                                // 扁平数组遍历 (步长为2)
+                                for (var k = 0; k < encryptedProps.length; k += 2) {
+                                    var id = encryptedProps[k];
+                                    var valArr = encryptedProps[k+1]; // [密文, 密钥, 错误位]
+                                    
+                                    if (id === 10000001 || id === 10000003 || id === 10000004) {
+                                        if (Array.isArray(valArr)) {
+                                            var realVal = valArr[0] ^ valArr[1];
+                                            if (id === 10000001) coin = realVal;
+                                            if (id === 10000003) gem = realVal;
+                                            if (id === 10000004) power = realVal;
+                                            foundCount++;
+                                        }
+                                    }
+                                }
+                            } else {
+                                // 嵌套数组遍历
                                 for (var k = 0; k < encryptedProps.length; k++) {
                                     var item = encryptedProps[k];
                                     var id = item[0];
-                                    var valArr = item[1]; // [密文, 密钥, 错误位]
+                                    var valArr = item[1];
                                     
                                     if (id === 10000001 || id === 10000003 || id === 10000004) {
-                                        var realVal = valArr[0] ^ valArr[1];
-                                        if (id === 10000001) coin = realVal;
-                                        if (id === 10000003) gem = realVal;
-                                        if (id === 10000004) power = realVal;
-                                        foundCount++;
+                                        if (Array.isArray(valArr)) {
+                                            var realVal = valArr[0] ^ valArr[1];
+                                            if (id === 10000001) coin = realVal;
+                                            if (id === 10000003) gem = realVal;
+                                            if (id === 10000004) power = realVal;
+                                            foundCount++;
+                                        }
                                     }
                                 }
-                                
-                                console.log("✅ 统计完成，找到 " + foundCount + " 个关键资源");
-                                var fmt = function(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); };
-                                
-                                $notify(
-                                    "MergeOne 资源统计", 
-                                    "", 
-                                    "💰 金币: " + fmt(coin) + "\n💎 钻石: " + fmt(gem) + "\n⚡ 体力: " + fmt(power)
-                                );
-                            } else {
-                                console.log("❌ encryptedProps 为空");
                             }
+                            
+                            console.log("✅ 统计完成: 金币=" + coin + ", 钻石=" + gem);
+                            
+                            var fmt = function(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); };
+                            
+                            $notify(
+                                "MergeOne 资源统计", 
+                                "", 
+                                "💰 金币: " + fmt(coin) + "\n💎 钻石: " + fmt(gem) + "\n⚡ 体力: " + fmt(power)
+                            );
+                            
                         } else {
-                            console.log("❌ propsData.data 结构异常或长度不足");
-                            console.log("   keys: " + Object.keys(propsData));
+                            console.log("❌ 未找到加密道具列表 (index 1)");
                         }
                     } else {
-                        console.log("❌ 未在 MergeThree 中找到 PropsArchive (ID 1)");
+                        console.log("❌ 未找到 PropsArchive");
                     }
-                } else {
-                    console.log("❌ MergeData 解密后格式不符期望 (不是数组或长度<3)");
                 }
-            } else {
-                console.log("❌ decryptMerge 返回 null");
             }
-        } else {
-            console.log("❌ 未找到 MergeThree 或其 data 字段为空");
         }
-    } else {
-        console.log("❌ 未找到 archives 数组 (obj.archives 和 obj.data.archives 均为空)");
     }
 } catch (e) {
-    console.log("❌ 脚本运行异常: " + e.message);
-    $notify("Merge脚本错误", "", e.message);
+    console.log("❌ 异常: " + e.message);
 }
 
 $done({});

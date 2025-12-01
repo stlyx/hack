@@ -58,8 +58,8 @@ function decryptMerge(str) {
 try {
     var obj = JSON.parse(body);
     
-    if (obj && obj.archives && Array.isArray(obj.archives)) {
-        var mergeThree = obj.archives.find(function(a) { return a.name === "MergeThree"; });
+    if (obj && obj.data && obj.data.archives && Array.isArray(obj.data.archives)) {
+        var mergeThree = obj.data.archives.find(function(a) { return a.name === "MergeThree"; });
         
         if (mergeThree && mergeThree.data) {
             var decryptedJsonStr = decryptMerge(mergeThree.data);

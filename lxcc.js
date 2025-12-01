@@ -1,6 +1,5 @@
 var body = $response.body;
 
-// 1. 核心解密类
 var Random = function() {
     function Random(seed) { this.setSeed(seed); }
     Random.prototype = {
@@ -44,7 +43,6 @@ function decryptMerge(str) {
     }
 }
 
-// 2. 业务逻辑
 try {
     var obj = JSON.parse(body);
     
@@ -60,6 +58,7 @@ try {
             
             if (decryptedJsonStr) {
                 var mergeData = JSON.parse(decryptedJsonStr);
+                console.log("✅ 解密成功：" + decryptedJsonStr);
                 
                 if (Array.isArray(mergeData) && mergeData.length >= 3) {
                     var subArchives = mergeData[2];
@@ -69,71 +68,35 @@ try {
                         for (var i = 0; i < subArchives.length; i++) {
                             if (subArchives[i][0] === 1) { // ID 1 是 PropsArchive
                                 propsData = subArchives[i][2];
-                                // console.log("✅ 找到 PropsArchive (ID 1)");
                                 break;
                             }
                         }
                     }
                     
                     if (propsData) {
-                        // 【结构兼容修复】
-                        // 情况A: propsData 是对象 { data: [[], []] }
-                        // 情况B: propsData 直接是数组 [[], []]
-                        var encryptedProps = null;
-                        
-                        if (Array.isArray(propsData) && propsData.length > 1) {
-                            encryptedProps = propsData[1];
-                        } else if (propsData.data && Array.isArray(propsData.data) && propsData.data.length > 1) {
-                            encryptedProps = propsData.data[1];
-                        }
+                        var encryptedProps = propsData[1];
 
                         if (encryptedProps && Array.isArray(encryptedProps)) {
-                            // console.log("ℹ️ 加密道具列表长度: " + encryptedProps.length);
-                            
                             var coin = 0, gem = 0, power = 0;
                             var foundCount = 0;
-                            
-                            // 【遍历方式兼容】
-                            // 判断是扁平数组 [id, val, id, val] 还是 嵌套数组 [[id, val], [id, val]]
-                            var isFlatArray = encryptedProps.length > 0 && typeof encryptedProps[0] === 'number';
-                            // console.log("ℹ️ 数组格式: " + (isFlatArray ? "扁平 [k,v,k,v]" : "嵌套 [[k,v]]"));
 
-                            if (isFlatArray) {
-                                // 扁平数组遍历 (步长为2)
-                                for (var k = 0; k < encryptedProps.length; k += 2) {
-                                    var id = encryptedProps[k];
-                                    var valArr = encryptedProps[k+1]; // [密文, 密钥, 错误位]
-                                    
-                                    if (id === 10000001 || id === 10000003 || id === 10000004) {
-                                        if (Array.isArray(valArr)) {
-                                            var realVal = valArr[0] ^ valArr[1];
-                                            if (id === 10000001) coin = realVal;
-                                            if (id === 10000003) gem = realVal;
-                                            if (id === 10000004) power = realVal;
-                                            foundCount++;
-                                        }
-                                    }
-                                }
-                            } else {
-                                // 嵌套数组遍历
-                                for (var k = 0; k < encryptedProps.length; k++) {
-                                    var item = encryptedProps[k];
-                                    var id = item[0];
-                                    var valArr = item[1];
-                                    
-                                    if (id === 10000001 || id === 10000003 || id === 10000004) {
-                                        if (Array.isArray(valArr)) {
-                                            var realVal = valArr[0] ^ valArr[1];
-                                            if (id === 10000001) coin = realVal;
-                                            if (id === 10000003) gem = realVal;
-                                            if (id === 10000004) power = realVal;
-                                            foundCount++;
-                                        }
+                            // 扁平数组遍历 (步长为2)
+                            for (var k = 0; k < encryptedProps.length; k += 2) {
+                                var id = encryptedProps[k];
+                                var valArr = encryptedProps[k+1]; // [密文, 密钥, 错误位]
+                                
+                                if (id === 10000001 || id === 10000003 || id === 10000004) {
+                                    if (Array.isArray(valArr)) {
+                                        var realVal = valArr[0] ^ valArr[1];
+                                        if (id === 10000001) coin = realVal;
+                                        if (id === 10000003) gem = realVal;
+                                        if (id === 10000004) power = realVal;
+                                        foundCount++;
                                     }
                                 }
                             }
                             
-                            console.log("✅ 统计完成: 金币=" + coin + ", 钻石=" + gem);
+                            console.log("✅ 统计完成: 金币=" + coin + ", 钻石=" + gem + ", 体力=" + power);
                             
                             var fmt = function(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); };
                             

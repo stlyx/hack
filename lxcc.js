@@ -59,12 +59,15 @@ try {
     var obj = JSON.parse(body);
     
     if (obj && obj.data && obj.data.archives && Array.isArray(obj.data.archives)) {
+        console.log("found archives");
         var mergeThree = obj.data.archives.find(function(a) { return a.name === "MergeThree"; });
         
         if (mergeThree && mergeThree.data) {
+            console.log("found MergeThree");
             var decryptedJsonStr = decryptMerge(mergeThree.data);
             
             if (decryptedJsonStr) {
+                console.log("decrypt MergeThree", decryptedJsonStr);
                 var mergeData = JSON.parse(decryptedJsonStr);
                 
                 var subArchives = mergeData[2];

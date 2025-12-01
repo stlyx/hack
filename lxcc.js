@@ -51,7 +51,7 @@ function decryptMerge(str) {
         return res;
     } catch (e) {
         console.log("Merge decrypt error: " + e);
-        return null;
+        throw e;
     }
 }
 
@@ -112,6 +112,7 @@ try {
         }
     }
 } catch (e) {
+    $notify("MergeOne Script Error: " + e.message);
     console.log("MergeOne Script Error: " + e.message);
 }
 

@@ -50,6 +50,45 @@ function decryptMerge(str) {
   }
 }
 
+function encryptMerge(jsonStr) {
+  try {
+    // 1. 生成新的随机 Header
+    var seedInt =
+      Math.floor(Math.random() * (2147483647 - 268435456 + 1)) + 268435456;
+    var header = seedInt.toString(16);
+    // 补齐8位
+    while (header.length < 8) header = "0" + header;
+
+    var fullStr = header + "$%" + jsonStr;
+    var len = fullStr.length;
+    var arr = new Array(len);
+    for (var i = 0; i < len; i++) arr[i] = fullStr.charCodeAt(i);
+
+    var rng = new Random(seedInt);
+
+    // 2. 正向洗牌 (与解密相反)
+    for (var u = 10; u < len; ++u) {
+      var h = rng.nextInt(10, u);
+      var temp = arr[u];
+      arr[u] = arr[h];
+      arr[h] = temp;
+    }
+
+    var res = "";
+    var chunkSize = 8192;
+    for (var i = 0; i < arr.length; i += chunkSize) {
+      res += String.fromCharCode.apply(null, arr.slice(i, i + chunkSize));
+    }
+    return res;
+  } catch (e) {
+    console.log("❌ Encrypt exception: " + e);
+    throw e;
+  }
+}
+
+// ==========================================
+// 2. 业务逻辑
+// ==========================================
 try {
   var obj = JSON.parse(body);
 
@@ -61,7 +100,6 @@ try {
   }
 
   if (archives && Array.isArray(archives)) {
-    console.log("ℹ️ 下载模块：" + JSON.stringify(archives.map((a) => a.name)));
     var mergeThree = archives.find(function (a) {
       return a.name === "MergeThree";
     });
@@ -71,7 +109,6 @@ try {
 
       if (decryptedJsonStr) {
         var mergeData = JSON.parse(decryptedJsonStr);
-        console.log("✅ 解密成功：" + decryptedJsonStr);
 
         if (Array.isArray(mergeData) && mergeData.length >= 3) {
           var subArchives = mergeData[2];
@@ -91,57 +128,53 @@ try {
             var encryptedProps = propsData[1];
 
             if (encryptedProps && Array.isArray(encryptedProps)) {
-              var coin = 0,
-                gem = 0,
-                power = 0;
-              var foundCount = 0;
+              var isModified = false;
 
-              // 扁平数组遍历 (步长为2)
+              // 目标修改数值
+              var TARGET_POWER = 167;
+
+              // 扁平数组 [id, val, id, val]
               for (var k = 0; k < encryptedProps.length; k += 2) {
                 var id = encryptedProps[k];
                 var valArr = encryptedProps[k + 1]; // [密文, 密钥, 错误位]
 
-                if (id === 10000001 || id === 10000003 || id === 10000004) {
-                  if (Array.isArray(valArr)) {
-                    var realVal = valArr[0] ^ valArr[1];
-                    if (id === 10000001) coin = realVal;
-                    if (id === 10000003) gem = realVal;
-                    if (id === 10000004) power = realVal;
-                    foundCount++;
-                  }
+                if (id === 10000004 && Array.isArray(valArr)) {
+                  var oldVal = valArr[0] ^ valArr[1];
+                  valArr[0] = TARGET_POWER ^ valArr[1];
+                  console.log("🛠️ 修改体力: " + oldVal + " -> " + TARGET_POWER);
+                  isModified = true;
                 }
               }
 
-              console.log(
-                "✅ 下载: 金币=" + coin + ", 钻石=" + gem + ", 体力=" + power
-              );
+              if (isModified) {
+                console.log("🔄 检测到数据修改，正在重新加密...");
+                var newMergeDataStr = JSON.stringify(mergeData);
+                var newEncryptedData = encryptMerge(newMergeDataStr);
 
-              var fmt = function (num) {
-                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-              };
+                if (newEncryptedData) {
+                  mergeThree.data = newEncryptedData;
+                  body = JSON.stringify(obj);
+                  console.log("✅ 数据回写完成");
+                } else {
+                  console.log("❌ 加密失败，放弃修改");
+                }
+              } else {
+                console.log("⚠️ 未找到体力数据 (ID 10000004)，未修改");
+              }
 
               $notify(
-                "MergeThree 加载",
+                "MergeThree 修改",
                 "",
-                "💰 金币: " +
-                  fmt(coin) +
-                  "\n💎 钻石: " +
-                  fmt(gem) +
-                  "\n⚡ 体力: " +
-                  fmt(power)
+                isModified ? "体力已改为 " + TARGET_POWER : "未找到体力数据"
               );
-            } else {
-              console.log("❌ 未找到加密道具列表 (index 1)");
             }
-          } else {
-            console.log("❌ 未找到 PropsArchive");
           }
         }
       }
     }
   }
 } catch (e) {
-  console.log("❌ 异常: " + e.message);
+  console.log("❌ 脚本异常: " + e.message);
 }
 
-$done({});
+$done({ body: body });

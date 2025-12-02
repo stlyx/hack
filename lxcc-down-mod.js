@@ -12,7 +12,7 @@ var Random = (function () {
       return (this._rand() % (max - min + 1)) + min;
     },
     _rand: function () {
-      this._seed = ((this._seed * 214013 + 2531011) >>> 16) & 32767;
+      this._seed = ((this._seed * 214013 + 2531011) >> 16) & 32767;
       return this._seed;
     },
   };
@@ -50,14 +50,22 @@ function decryptMerge(str) {
   }
 }
 
-function encryptMerge(jsonStr) {
+function encryptMerge(jsonStr, originalHeader) {
   try {
-    // 1. 生成新的随机 Header
-    var seedInt =
-      Math.floor(Math.random() * (2147483647 - 268435456 + 1)) + 268435456;
-    var header = seedInt.toString(16);
-    // 补齐8位
-    while (header.length < 8) header = "0" + header;
+    var header;
+    var seedInt;
+
+    if (originalHeader) {
+      // 复用模式：使用原始 Header
+      header = originalHeader;
+      seedInt = parseInt(header, 16);
+    } else {
+      // 生成模式：生成新的随机 Header
+      seedInt =
+        Math.floor(Math.random() * (2147483647 - 268435456 + 1)) + 268435456;
+      header = seedInt.toString(16);
+      while (header.length < 8) header = "0" + header;
+    }
 
     var fullStr = header + "$%" + jsonStr;
     var len = fullStr.length;
@@ -66,7 +74,7 @@ function encryptMerge(jsonStr) {
 
     var rng = new Random(seedInt);
 
-    // 2. 正向洗牌 (与解密相反)
+    // 正向洗牌
     for (var u = 10; u < len; ++u) {
       var h = rng.nextInt(10, u);
       var temp = arr[u];
@@ -105,6 +113,8 @@ try {
     });
 
     if (mergeThree && mergeThree.data) {
+      var originalHeader = mergeThree.data.substring(0, 8);
+
       var decryptedJsonStr = decryptMerge(mergeThree.data);
 
       if (decryptedJsonStr) {
@@ -129,14 +139,12 @@ try {
 
             if (encryptedProps && Array.isArray(encryptedProps)) {
               var isModified = false;
-
-              // 目标修改数值
               var TARGET_POWER = 167;
 
               // 扁平数组 [id, val, id, val]
               for (var k = 0; k < encryptedProps.length; k += 2) {
                 var id = encryptedProps[k];
-                var valArr = encryptedProps[k + 1]; // [密文, 密钥, 错误位]
+                var valArr = encryptedProps[k + 1];
 
                 if (id === 10000004 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
@@ -147,16 +155,23 @@ try {
               }
 
               if (isModified) {
-                console.log("🔄 检测到数据修改，正在重新加密...");
+                console.log(
+                  "🔄 重新加密 (使用原始Header: " + originalHeader + ")..."
+                );
+
                 var newMergeDataStr = JSON.stringify(mergeData);
-                var newEncryptedData = encryptMerge(newMergeDataStr);
+
+                var newEncryptedData = encryptMerge(
+                  newMergeDataStr,
+                  originalHeader
+                );
 
                 if (newEncryptedData) {
                   mergeThree.data = newEncryptedData;
                   body = JSON.stringify(obj);
                   console.log("✅ 数据回写完成");
                 } else {
-                  console.log("❌ 加密失败，放弃修改");
+                  console.log("❌ 加密失败");
                 }
               } else {
                 console.log("⚠️ 未找到体力数据 (ID 10000004)，未修改");

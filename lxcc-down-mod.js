@@ -6,25 +6,12 @@
 // ==========================================
 // 1. 配置信息
 // ==========================================
-
-// 原始 AppID 数组
-const APP_ID_ARR = [25, 15, 12, 30, 44, 28, 60, 37];
-// 原始 SignKey 数组
-const SIGN_KEY_ARR = [73, 72, 27, 30, 77, 78, 28, 77, 28, 75, 78, 74, 70, 28, 73, 70, 25, 74, 75, 28, 30, 29, 26, 30, 76, 28, 74, 72, 73, 73, 75, 74];
-
-function arrToString(arr) {
-    // ⚠️ 警告：如果游戏里有额外的解密逻辑（比如异或），这里得到的字符串可能是错的
-    // 但我们需要先确保 MD5 函数本身能算出东西
-    return String.fromCharCode.apply(null, arr);
-}
-
-const APP_ID = arrToString(APP_ID_ARR);
-const SIGN_KEY = arrToString(SIGN_KEY_ARR);
+const APP_ID = "fpsaScCZ";
+const SIGN_KEY = "67da21c2c4159c69f54cabea3c576645";
 
 // ==========================================
 // 2. 稳定的 MD5 算法 (Blueimp 核心)
 // ==========================================
-
 function safeAdd(x, y) {
   var lsw = (x & 0xffff) + (y & 0xffff)
   var msw = (x >> 16) + (y >> 16) + (lsw >> 16)

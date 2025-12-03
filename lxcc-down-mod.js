@@ -1,39 +1,154 @@
 /*
- * 脚本名称: MergeOne 资源修改 (完美签名版 - 修复时间戳来源)
- * 作用: 修改体力 -> 获取请求头时间戳 -> 计算正确MD5签名 -> 伪造响应头
- * 核心算法: md5(appid=...&body=...&signkey=...&time=...&)
+ * 脚本名称: MergeOne 资源修改 (修复MD5核心版)
+ * 作用: 更换了稳定的 MD5 算法，修复签名全0的问题
  */
 
 // ==========================================
-// 1. 配置信息 (已填入固定数组)
+// 1. 配置信息
 // ==========================================
 
-// 原始 AppID 数组 (Char Codes)
+// 原始 AppID 数组
 const APP_ID_ARR = [25, 15, 12, 30, 44, 28, 60, 37];
-
-// 原始 SignKey 数组 (Char Codes)
+// 原始 SignKey 数组
 const SIGN_KEY_ARR = [73, 72, 27, 30, 77, 78, 28, 77, 28, 75, 78, 74, 70, 28, 73, 70, 25, 74, 75, 28, 30, 29, 26, 30, 76, 28, 74, 72, 73, 73, 75, 74];
 
-// 辅助函数：将 CharCode 数组转换为字符串
 function arrToString(arr) {
+    // ⚠️ 警告：如果游戏里有额外的解密逻辑（比如异或），这里得到的字符串可能是错的
+    // 但我们需要先确保 MD5 函数本身能算出东西
     return String.fromCharCode.apply(null, arr);
 }
 
-// 还原后的配置字符串
 const APP_ID = arrToString(APP_ID_ARR);
 const SIGN_KEY = arrToString(SIGN_KEY_ARR);
 
 // ==========================================
-// 核心代码
+// 2. 稳定的 MD5 算法 (Blueimp 核心)
 // ==========================================
-var body = $response.body;
-var headers = $response.headers; // 响应头 (我们要修改这里的 sign)
-var reqHeaders = $request.headers; // 请求头 (我们要读取这里的 time)
+var md5 = function (str) {
+    function safe_add(x, y) {
+        var lsw = (x & 0xFFFF) + (y & 0xFFFF);
+        var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+        return (msw << 16) | (lsw & 0xFFFF);
+    }
+    function bit_rol(num, cnt) {
+        return (num << cnt) | (num >>> (32 - cnt));
+    }
+    function md5_cmn(q, a, b, x, s, t) {
+        return safe_add(bit_rol(safe_add(safe_add(a, q), safe_add(x, t)), s), b);
+    }
+    function md5_ff(a, b, c, d, x, s, t) {
+        return md5_cmn((b & c) | ((~b) & d), a, b, x, s, t);
+    }
+    function md5_gg(a, b, c, d, x, s, t) {
+        return md5_cmn((b & d) | (c & (~d)), a, b, x, s, t);
+    }
+    function md5_hh(a, b, c, d, x, s, t) {
+        return md5_cmn(b ^ c ^ d, a, b, x, s, t);
+    }
+    function md5_ii(a, b, c, d, x, s, t) {
+        return md5_cmn(c ^ (b | (~d)), a, b, x, s, t);
+    }
+    function binl2rstr(input) {
+        var output = "";
+        for (var i = 0; i < input.length * 32; i += 8)
+            output += String.fromCharCode((input[i >> 5] >>> (i % 32)) & 0xFF);
+        return output;
+    }
+    function rstr2hex(input) {
+        var hex_tab = "0123456789abcdef";
+        var output = "";
+        for (var i = 0; i < input.length; i++) {
+            var x = input.charCodeAt(i);
+            output += hex_tab.charAt((x >>> 4) & 0x0F) + hex_tab.charAt(x & 0x0F);
+        }
+        return output;
+    }
+    function rstr_md5(s) {
+        var x = Array(s.length >> 2);
+        for(var i = 0; i < x.length; i++) x[i] = 0;
+        for(var i = 0; i < s.length * 8; i += 8)
+            x[i >> 5] |= (s.charCodeAt(i / 8) & 0xFF) << (i % 32);
+        var len = s.length * 8;
+        x[len >> 5] |= 0x80 << (len % 32);
+        x[(((len + 64) >>> 9) << 4) + 14] = len;
+        var a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+        for (var i = 0; i < x.length; i += 16) {
+            var olda = a, oldb = b, oldc = c, oldd = d;
+            a = md5_ff(a, b, c, d, x[i + 0], 7, -680876936);
+            d = md5_ff(d, a, b, c, x[i + 1], 12, -389564586);
+            c = md5_ff(c, d, a, b, x[i + 2], 17, 606105819);
+            b = md5_ff(b, c, d, a, x[i + 3], 22, -1044525330);
+            a = md5_ff(a, b, c, d, x[i + 4], 7, -176418897);
+            d = md5_ff(d, a, b, c, x[i + 5], 12, 1200080426);
+            c = md5_ff(c, d, a, b, x[i + 6], 17, -1473231341);
+            b = md5_ff(b, c, d, a, x[i + 7], 22, -45705983);
+            a = md5_ff(a, b, c, d, x[i + 8], 7, 1770035416);
+            d = md5_ff(d, a, b, c, x[i + 9], 12, -1958414417);
+            c = md5_ff(c, d, a, b, x[i + 10], 17, -42063);
+            b = md5_ff(b, c, d, a, x[i + 11], 22, -1990404162);
+            a = md5_ff(a, b, c, d, x[i + 12], 7, 1804603682);
+            d = md5_ff(d, a, b, c, x[i + 13], 12, -40341101);
+            c = md5_ff(c, d, a, b, x[i + 14], 17, -1502002290);
+            b = md5_ff(b, c, d, a, x[i + 15], 22, 1236535329);
+            a = md5_gg(a, b, c, d, x[i + 1], 5, -165796510);
+            d = md5_gg(d, a, b, c, x[i + 6], 9, -1069501632);
+            c = md5_gg(c, d, a, b, x[i + 11], 14, 643717713);
+            b = md5_gg(b, c, d, a, x[i + 0], 20, -373897302);
+            a = md5_gg(a, b, c, d, x[i + 5], 5, -701558691);
+            d = md5_gg(d, a, b, c, x[i + 10], 9, 38016083);
+            c = md5_gg(c, d, a, b, x[i + 15], 14, -660478335);
+            b = md5_gg(b, c, d, a, x[i + 4], 20, -405537848);
+            a = md5_gg(a, b, c, d, x[i + 9], 5, 568446438);
+            d = md5_gg(d, a, b, c, x[i + 14], 9, -1019803690);
+            c = md5_gg(c, d, a, b, x[i + 3], 14, -187363961);
+            b = md5_gg(b, c, d, a, x[i + 8], 20, 1163531501);
+            a = md5_gg(a, b, c, d, x[i + 13], 5, -1444681467);
+            d = md5_gg(d, a, b, c, x[i + 2], 9, -51403784);
+            c = md5_gg(c, d, a, b, x[i + 7], 14, 1735328473);
+            b = md5_gg(b, c, d, a, x[i + 12], 20, -1926607734);
+            a = md5_hh(a, b, c, d, x[i + 5], 4, -378558);
+            d = md5_hh(d, a, b, c, x[i + 8], 11, -2022574463);
+            c = md5_hh(c, d, a, b, x[i + 11], 16, 1839030562);
+            b = md5_hh(b, c, d, a, x[i + 14], 23, -35309556);
+            a = md5_hh(a, b, c, d, x[i + 1], 4, -1530992060);
+            d = md5_hh(d, a, b, c, x[i + 4], 11, 1272893353);
+            c = md5_hh(c, d, a, b, x[i + 7], 16, -155497632);
+            b = md5_hh(b, c, d, a, x[i + 10], 23, -1094730640);
+            a = md5_hh(a, b, c, d, x[i + 13], 4, 681279174);
+            d = md5_hh(d, a, b, c, x[i + 0], 11, -358537222);
+            c = md5_hh(c, d, a, b, x[i + 3], 16, -722521979);
+            b = md5_hh(b, c, d, a, x[i + 6], 23, 76029189);
+            a = md5_hh(a, b, c, d, x[i + 9], 4, -640364487);
+            d = md5_hh(d, a, b, c, x[i + 12], 11, -421815835);
+            c = md5_hh(c, d, a, b, x[i + 15], 16, 530742520);
+            b = md5_hh(b, c, d, a, x[i + 2], 23, -995338651);
+            a = md5_ii(a, b, c, d, x[i + 0], 6, -198630844);
+            d = md5_ii(d, a, b, c, x[i + 7], 10, 1126891415);
+            c = md5_ii(c, d, a, b, x[i + 14], 15, -1416354905);
+            b = md5_ii(b, c, d, a, x[i + 5], 21, -57434055);
+            a = md5_ii(a, b, c, d, x[i + 12], 6, 1700485571);
+            d = md5_ii(d, a, b, c, x[i + 3], 10, -1894986606);
+            c = md5_ii(c, d, a, b, x[i + 10], 15, -1051523);
+            b = md5_ii(b, c, d, a, x[i + 1], 21, -2054922799);
+            a = md5_ii(a, b, c, d, x[i + 8], 6, 1873313359);
+            d = md5_ii(d, a, b, c, x[i + 15], 10, -30611744);
+            c = md5_ii(c, d, a, b, x[i + 6], 15, -1560198380);
+            b = md5_ii(b, c, d, a, x[i + 13], 21, 1309151649);
+            a = md5_ii(a, b, c, d, x[i + 4], 6, -145523070);
+            d = md5_ii(d, a, b, c, x[i + 11], 10, -1120210379);
+            c = md5_ii(c, d, a, b, x[i + 2], 15, 718787259);
+            b = md5_ii(b, c, d, a, x[i + 9], 21, -343485551);
+            a = safe_add(a, olda);
+            b = safe_add(b, oldb);
+            c = safe_add(c, oldc);
+            d = safe_add(d, oldd);
+        }
+        return rstr2hex(binl2rstr(x));
+    }
+    return rstr_md5(str);
+}
 
-// 1. MD5 库函数
-var MD5=function(d){var r=M(V(Y(X(d),8*d.length)));return r.toLowerCase()};function M(d){for(var _,m="0123456789ABCDEF",f="",r=0;r<d.length;r++)_=d[r],f+=m.charAt(_>>>4&15)+m.charAt(15&_);return f}function X(d){for(var _=Array(d.length>>2),m=0;m<_.length;m++)_[m]=0;for(m=0;m<8*d.length;m+=8)_[m>>5]|=(255&d.charCodeAt(m/8))<<m%32;return _}function V(d){for(var _="",m=0;m<32*d.length;m+=8)_+=String.fromCharCode(d[m>>5]>>>m%32&255);return _}function Y(d,_){d[_>>5]|=128<<_%32,d[14+(_+64>>>9<<4)]=_;for(var m=1732584193,f=-271733879,r=-1732584194,i=271733878,n=0;n<d.length;n+=16){var h=m,t=f,g=r,e=i;m=md5_ii(m=md5_ii(m=md5_ii(m=md5_ii(m=md5_hh(m=md5_hh(m=md5_hh(m=md5_hh(m=md5_gg(m=md5_gg(m=md5_gg(m=md5_gg(m=md5_ff(m=md5_ff(m=md5_ff(m=md5_ff(m,f,r,i,d[n+0],7,-680876936),f,r,i,d[n+1],12,-389564586),r,i,d[n+2],17,606105819),i,d[n+3],22,-1044525330),f,r,i,d[n+4],7,-176418897),f,r,i,d[n+5],12,1200080426),r,i,d[n+6],17,-1473231341),i,d[n+7],22,-45705983),f,r,i,d[n+8],7,1770035416),f,r,i,d[n+9],12,-1958414417),r,i,d[n+10],17,-42063),i,d[n+11],22,-1990404162),f,r,i,d[n+12],7,1804603682),f,r,i,d[n+13],12,-40341101),r,i,d[n+14],17,-1502002290),i,d[n+15],22,1236535329),m=md5_add(m,h),f=md5_add(f,t),r=md5_add(g,r),i=md5_add(e,i)}return Array(m,f,r,i)}function md5_cmn(d,_,m,f,r,i){return md5_add(bit_rol(md5_add(md5_add(_,d),md5_add(f,i)),r),m)}function md5_ff(d,_,m,f,r,i,n){return md5_cmn(_&m|~_&f,d,_,r,i,n)}function md5_gg(d,_,m,f,r,i,n){return md5_cmn(_&f|m&~f,d,_,r,i,n)}function md5_hh(d,_,m,f,r,i,n){return md5_cmn(_^m^f,d,_,r,i,n)}function md5_ii(d,_,m,f,r,i,n){return md5_cmn(m^(_|~f),d,_,r,i,n)}function md5_add(d,_){var m=(65535&d)+(65535&_);return(d>>16)+(_>>16)+(m>>16)<<16|65535&m}function bit_rol(d,_){return d<<_|d>>>32-_}
-
-// 2. 解密/加密类 (复用之前的逻辑)
+// 3. 核心工具类 (Random, Decrypt, Encrypt)
 var Random = (function () {
   function Random(seed) { this.setSeed(seed); }
   Random.prototype = {
@@ -61,7 +176,7 @@ function decryptMerge(str) {
 
 function encryptMerge(jsonStr, originalHeader) {
     try {
-        var header = originalHeader; // 必须使用原始 Header
+        var header = originalHeader;
         var seedInt = parseInt(header, 16);
         var fullStr = header + "$%" + jsonStr;
         var len = fullStr.length;
@@ -78,7 +193,11 @@ function encryptMerge(jsonStr, originalHeader) {
     } catch (e) { return null; }
 }
 
-// 3. 业务逻辑
+// 4. 业务逻辑
+var body = $response.body;
+var headers = $response.headers;
+var reqHeaders = $request.headers;
+
 try {
   var obj = JSON.parse(body);
   var archives = null;
@@ -126,7 +245,6 @@ try {
               if (isFlatArray) {
                 for (var k = 0; k < encryptedProps.length; k += 2) modifyFunc(k, encryptedProps);
               } else {
-                 // 兼容嵌套数组
                  for (var k = 0; k < encryptedProps.length; k++) {
                      var item = encryptedProps[k];
                      if(item[0] === 10000004) {
@@ -139,7 +257,6 @@ try {
               }
 
               if (isModified) {
-                  // 1. 重新加密数据
                   var newMergeDataStr = JSON.stringify(mergeData);
                   var newEncryptedData = encryptMerge(newMergeDataStr, originalHeader);
                   
@@ -148,29 +265,26 @@ try {
                       body = JSON.stringify(obj);
                       console.log("✅ Body 数据已修改");
 
-                      // 2. 重新计算签名
-                      // 【关键修改】 从 reqHeaders 获取时间戳
                       var timeKey = Object.keys(reqHeaders).find(k => k.toLowerCase() === 'time') || 
                                     Object.keys(reqHeaders).find(k => k.toLowerCase() === 'timestamp') || "time";
                       var timeVal = reqHeaders[timeKey];
 
                       if (timeVal) {
-                          // 构造签名字符串：appid=...&body=...&signkey=...&time=...&
+                          // 注意：这里暂时假设 APP_ID 和 SIGN_KEY 直接用 CharCode 还原的字符串是对的
                           var signStr = "appid=" + APP_ID + 
                                         "&body=" + body + 
                                         "&signkey=" + SIGN_KEY + 
                                         "&time=" + timeVal + "&";
                           
-                          var newSign = MD5(signStr);
+                          var newSign = md5(signStr);
                           
-                          // 更新响应头
                           var signHeaderKey = Object.keys(headers).find(k => k.toLowerCase() === 'sign') || "sign";
                           headers[signHeaderKey] = newSign;
                           
                           console.log("✅ 签名已更新: " + newSign + " (Time: " + timeVal + ")");
-                          $notify("MergeThree 修改成功", "", "体力已改并重签");
+                          $notify("MergeThree 修改成功", "", "体力已改并重签: " + newSign.substring(0, 6) + "...");
                       } else {
-                          console.log("❌ 未在【请求头】中找到时间戳 (time/timestamp)，无法重签");
+                          console.log("❌ 无法获取 time 时间戳");
                       }
                   }
               }

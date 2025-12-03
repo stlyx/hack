@@ -314,7 +314,7 @@ try {
                 if (newEncryptedData) {
                   mergeThree.data = newEncryptedData;
                   body = JSON.stringify(obj);
-                  console.log("✅ Body 数据已修改");
+                  console.log("✅ Body 数据已修改：" + modified);
 
                   var timeKey = Object.keys(reqHeaders).find(k => k.toLowerCase() === 'time') ||
                     Object.keys(reqHeaders).find(k => k.toLowerCase() === 'timestamp') || "time";
@@ -332,7 +332,7 @@ try {
                     headers[signHeaderKey] = newSign;
 
                     console.log("✅ 签名已更新: " + newSign + " (Time: " + timeVal + ")");
-                    $notify("MergeThree 修改成功", "", "体力已改并重签: " + newSign.substring(0, 6) + "...");
+                    $notify("MergeThree 修改成功", "", modified);
                   } else {
                     console.log("❌ 无法获取 time 时间戳");
                   }

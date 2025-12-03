@@ -275,7 +275,6 @@ try {
               var TARGET_POWER = 139;
               var TARGET_COIN = 122792;
               var TARGET_TAIYI = 279;
-              var TARGET_AD = 1;
 
               var modifyFunc = function (k, arr) {
                 var id = arr[k]; var valArr = arr[k + 1];
@@ -296,12 +295,6 @@ try {
                   if (oldVal >= TARGET_TAIYI) return;
                   valArr[0] = TARGET_TAIYI ^ valArr[1];
                   modified = modified + (" 🐸 " + oldVal + " -> " + TARGET_TAIYI);
-                  isModified = true;
-                } else if (id === 10000202 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= TARGET_AD) return;
-                  valArr[0] = TARGET_AD ^ valArr[1];
-                  modified = modified + (" 🅰️ " + oldVal + " -> " + TARGET_TAIYI);
                   isModified = true;
                 }
               };

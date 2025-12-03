@@ -1,17 +1,6 @@
-/*
- * 脚本名称: MergeOne 资源修改 (修复MD5核心版)
- * 作用: 更换了稳定的 MD5 算法，修复签名全0的问题
- */
-
-// ==========================================
-// 1. 配置信息
-// ==========================================
 const APP_ID = "fpsaScCZ";
 const SIGN_KEY = "67da21c2c4159c69f54cabea3c576645";
 
-// ==========================================
-// 2. 稳定的 MD5 算法 (Blueimp 核心)
-// ==========================================
 function safeAdd(x, y) {
   var lsw = (x & 0xffff) + (y & 0xffff)
   var msw = (x >> 16) + (y >> 16) + (lsw >> 16)
@@ -205,7 +194,6 @@ function md5(string, key, raw) {
   return rawHMACMD5(key, string)
 }
 
-// 3. 核心工具类 (Random, Decrypt, Encrypt)
 var Random = (function () {
   function Random(seed) { this.setSeed(seed); }
   Random.prototype = {
@@ -250,7 +238,6 @@ function encryptMerge(jsonStr, originalHeader) {
     } catch (e) { return null; }
 }
 
-// 4. 业务逻辑
 var body = $response.body;
 var headers = $response.headers;
 var reqHeaders = $request.headers;
@@ -286,9 +273,8 @@ try {
             if (encryptedProps && Array.isArray(encryptedProps)) {
               var isFlatArray = encryptedProps.length > 0 && typeof encryptedProps[0] === 'number';
               var isModified = false;
-              var TARGET_POWER = 167; // 目标体力值
+              var TARGET_POWER = 139;
 
-              // 修改体力逻辑
               var modifyFunc = function(k, arr) {
                  var id = arr[k]; var valArr = arr[k+1];
                  if (id === 10000004 && Array.isArray(valArr)) { // 体力 ID
@@ -327,7 +313,6 @@ try {
                       var timeVal = reqHeaders[timeKey];
 
                       if (timeVal) {
-                          // 注意：这里暂时假设 APP_ID 和 SIGN_KEY 直接用 CharCode 还原的字符串是对的
                           var signStr = "appid=" + APP_ID + 
                                         "&body=" + body + 
                                         "&signkey=" + SIGN_KEY + 

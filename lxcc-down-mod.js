@@ -272,29 +272,58 @@ try {
               var isFlatArray = encryptedProps.length > 0 && typeof encryptedProps[0] === 'number';
               var isModified = false;
               var modified = "";
-              var TARGET_POWER = 139;
-              var TARGET_COIN = 122792;
               var TARGET_TAIYI = 279;
 
               var modifyFunc = function (k, arr) {
                 var id = arr[k]; var valArr = arr[k + 1];
                 if (id === 10000004 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal > TARGET_POWER) return;
-                  valArr[0] = TARGET_POWER ^ valArr[1];
-                  modified = modified + (" ⚡ " + oldVal + " -> " + TARGET_POWER);
+                  if (oldVal > 50) return;
+                  var newVal = oldVal + 125;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" ⚡ " + oldVal + " -> " + newVal);
                   isModified = true;
                 } else if (id === 10000001 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= TARGET_COIN) return;
-                  valArr[0] = TARGET_COIN ^ valArr[1];
-                  modified = modified + (" 💰 " + oldVal + " -> " + TARGET_COIN);
+                  if (oldVal >= 100000) return;
+                  var newVal = oldVal + 40000;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" 💰 " + oldVal + " -> " + newVal);
                   isModified = true;
                 } else if (id === 10000008 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= TARGET_TAIYI) return;
-                  valArr[0] = TARGET_TAIYI ^ valArr[1];
-                  modified = modified + (" 🐸 " + oldVal + " -> " + TARGET_TAIYI);
+                  if (oldVal >= 200) return;
+                  var newVal = oldVal + 100;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" 🐸 " + oldVal + " -> " + newVal);
+                  isModified = true;
+                } else if (id === 10000003 && Array.isArray(valArr)) {
+                  var oldVal = valArr[0] ^ valArr[1];
+                  if (oldVal >= 10000) return;
+                  var newVal = oldVal + 1280;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" 💎 " + oldVal + " -> " + newVal);
+                  isModified = true;
+                } else if (id === 10000009 && Array.isArray(valArr)) {
+                  var oldVal = valArr[0] ^ valArr[1];
+                  if (oldVal >= 10000) return;
+                  var newVal = oldVal + 1200;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" 🐦 " + oldVal + " -> " + newVal);
+                  isModified = true;
+                } else if (id === 10000010 && Array.isArray(valArr)) {
+                  var oldVal = valArr[0] ^ valArr[1];
+                  if (oldVal >= 10000) return;
+                  var newVal = oldVal + 4000;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" 🐱 " + oldVal + " -> " + newVal);
+                  isModified = true;
+                } else if (id === 10000202 && Array.isArray(valArr)) {
+                  var oldVal = valArr[0] ^ valArr[1];
+                  if (oldVal >= 0) return;
+                  var newVal = oldVal + 5;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" 🪧 " + oldVal + " -> " + newVal);
                   isModified = true;
                 }
               };

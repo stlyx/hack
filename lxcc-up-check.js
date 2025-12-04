@@ -96,41 +96,35 @@ try {
               var coin = 0,
                 gem = 0,
                 power = 0;
-              var foundCount = 0;
 
               // 扁平数组遍历 (步长为2)
               for (var k = 0; k < encryptedProps.length; k += 2) {
                 var id = encryptedProps[k];
                 var valArr = encryptedProps[k + 1]; // [密文, 密钥, 错误位]
 
-                if (id === 10000001 || id === 10000003 || id === 10000004) {
+                // e[e.Start = 10000001] = "Start", e[e.Coin = 10000001] = "Coin", e[e.Exp = 10000002] = "Exp", e[e.Gem = 10000003] = "Gem", e[e.Power = 10000004] = "Power", e[e.Fund = 10000005] = "Fund", e[e.CollectExp = 10000007] = "CollectExp", e[e.TaiYi = 10000008] = "TaiYi", e[e.AJie = 10000009] = "AJie", e[e.Miao = 10000010] = "Miao", e[e.Shears = 10000011] = "Shears", e[e.Turntable = 10000051] = "Turntable", e[e.TurntableSeason = 10000052] = "TurntableSeason", e[e.LowModTool = 10000101] = "LowModTool", e[e.HighModTool = 10000102] = "HighModTool", e[e.BPDiscountCard = 10000201] = "BPDiscountCard", e[e.AdsTicket = 10000202] = "AdsTicket", e[e.TrialCard = 10000203] = "TrialCard", e[e.SevenDayExp = 10000204] = "SevenDayExp", e[e.SeasonSevenDayExp = 10000205] = "SeasonSevenDayExp", e[e.TSCoin = 10000206] = "TSCoin", e[e.ReforgeExp = 10000207] = "ReforgeExp", e[e.BPExp = 10000301] = "BPExp", e[e.STExp = 10000302] = "STExp", e[e.Season = 10000401] = "Season", e[e.GameEnd = 10000402] = "GameEnd", e[e.ClubSelfCoin = 10000501] = "ClubSelfCoin", e[e.CP = 10000502] = "CP", e[e.ClubCoin = 10000503] = "ClubCoin", e[e.PVPCoin = 10000601] = "PVPCoin", e[e.End = 10000602] = "End"
+
+                if (id >= 10000000 && id < 20000000) {
                   if (Array.isArray(valArr)) {
                     var realVal = valArr[0] ^ valArr[1];
-                    if (id === 10000001) coin = realVal;
-                    if (id === 10000003) gem = realVal;
-                    if (id === 10000004) power = realVal;
-                    foundCount++;
+                    if (id === 10000001) {
+                      coin = realVal;
+                    } else if (id === 10000003) {
+                      gem = realVal;
+                    } else if (id === 10000004) {
+                      power = realVal;
+                    }
+                    console.log(
+                      "✅ 上传： " + id + "=" + realVal
+                    );
                   }
                 }
               }
 
-              console.log(
-                "✅ 上传: 金币=" + coin + ", 钻石=" + gem + ", 体力=" + power
-              );
-
-              var fmt = function (num) {
-                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-              };
-
               $notify(
                 "MergeThree 保存",
                 "",
-                "💰 金币: " +
-                  fmt(coin) +
-                  " 💎 钻石: " +
-                  fmt(gem) +
-                  " ⚡ 体力: " +
-                  fmt(power)
+                "💰" + coin + " 💎" + gem + " ⚡" + power
               );
             } else {
               console.log("❌ 未找到加密道具列表 (index 1)");

@@ -320,7 +320,7 @@ try {
                   isModified = true;
                 } else if (id === 10000203 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 1) return;
+                  if (oldVal >= 1 || new Date().getMinutes() % 10 !== 0) return;
                   var newVal = oldVal + 1;
                   valArr[0] = newVal ^ valArr[1];
                   modified = modified + (" ✌️ " + oldVal + " -> " + newVal);

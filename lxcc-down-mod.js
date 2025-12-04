@@ -318,12 +318,12 @@ try {
                   valArr[0] = newVal ^ valArr[1];
                   modified = modified + (" 🐱 " + oldVal + " -> " + newVal);
                   isModified = true;
-                } else if (id === 10000202 && Array.isArray(valArr)) {
+                } else if (id === 10000501 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 0) return;
-                  var newVal = oldVal + 5;
+                  if (oldVal >= 12000) return;
+                  var newVal = oldVal + 300;
                   valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" 🪧 " + oldVal + " -> " + newVal);
+                  modified = modified + (" ✈️ " + oldVal + " -> " + newVal);
                   isModified = true;
                 }
               };

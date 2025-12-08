@@ -325,6 +325,13 @@ try {
                   valArr[0] = newVal ^ valArr[1];
                   modified = modified + (" ✌️ " + oldVal + " -> " + newVal);
                   isModified = true;
+                } else if (id === 10000011 && Array.isArray(valArr)) {
+                  var oldVal = valArr[0] ^ valArr[1];
+                  if (oldVal >= 30 || new Date().getMinutes() % 10 !== 0) return;
+                  var newVal = oldVal + 1;
+                  valArr[0] = newVal ^ valArr[1];
+                  modified = modified + (" ✂️ " + oldVal + " -> " + newVal);
+                  isModified = true;
                 }
               };
               for (var k = 0; k < encryptedProps.length; k += 2) modifyFunc(k, encryptedProps);

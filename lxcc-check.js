@@ -75,7 +75,7 @@ try {
           if (decryptedStr) {
             try {
                 var jsonObj = JSON.parse(decryptedStr);
-                console.log("🔓 [" + name + "] 解密数据:\n" + JSON.stringify(jsonObj, null, 2));
+                console.log("🔓 [" + name + "] 解密数据:\n" + JSON.stringify(jsonObj));
             } catch (jsonErr) {
                 console.log("🔓 [" + name + "] 解密内容(非JSON):\n" + decryptedStr);
             }

@@ -278,7 +278,7 @@ try {
                 var id = arr[k]; var valArr = arr[k + 1];
                 if (id === 10000004 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  var newVal = oldVal + 125;
+                  var newVal = oldVal + 1250;
                   valArr[0] = newVal ^ valArr[1];
                   modified = modified + (" ⚡ " + oldVal + " -> " + newVal);
                   isModified = true;
@@ -315,13 +315,13 @@ try {
                   isModified = true;
                 } else if (id === 10000203 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  var newVal = oldVal + 3;
+                  var newVal = oldVal + 7;
                   valArr[0] = newVal ^ valArr[1];
                   modified = modified + (" ✌️ " + oldVal + " -> " + newVal);
                   isModified = true;
                 } else if (id === 10000011 && Array.isArray(valArr)) {
                   var oldVal = valArr[0] ^ valArr[1];
-                  var newVal = oldVal + 1;
+                  var newVal = oldVal + 3;
                   valArr[0] = newVal ^ valArr[1];
                   modified = modified + (" ✂️ " + oldVal + " -> " + newVal);
                   isModified = true;

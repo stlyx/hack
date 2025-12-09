@@ -382,7 +382,7 @@ try {
           "&signkey=" + SIGN_KEY +
           "&time=" + timeVal + "&";
 
-        var newSign = MD5(signStr);
+        var newSign = md5(signStr);
 
         var signHeaderKey = Object.keys(headers).find(k => k.toLowerCase() === 'sign') || "sign";
         headers[signHeaderKey] = newSign;

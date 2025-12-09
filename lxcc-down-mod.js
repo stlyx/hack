@@ -345,7 +345,7 @@ try {
                   if (comp && typeof comp.st === 'number' && typeof comp.cd === 'number') {
                     if (comp.cd > 0 && comp.st > 0) {
                       console.log("🚀加速 " + item.g + " " + new Date((comp.st + 1609430400) * 1000).toLocaleTimeString() + " - " + comp.cd + "s");
-                      comp.st = comp.st - comp.cd;
+                      comp.st = -1;
                       modifiedCount++;
                     }
                   }

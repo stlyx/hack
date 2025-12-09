@@ -282,7 +282,7 @@ try {
 
                 if (id === 10000004 && oldVal <= 50) { newVal += 125; name = "⚡"; }
                 else if (id === 10000001 && oldVal < 100000) { newVal += 40000; name = "💰"; }
-                else if (id === 10000003 && oldVal < 10000) { newVal += 1280; name = "💎"; }
+                else if (id === 10000003 && oldVal < 10000) { newVal += 1280; name = "💎"; }  
                 else if (id === 10000008 && oldVal < 200) { newVal += 100; name = "🐸"; }
                 else if (id === 10000009 && oldVal < 10000) { newVal += 1200; name = "🐦"; }
                 else if (id === 10000010 && oldVal < 10000) { newVal += 4000; name = "🐱"; }
@@ -291,7 +291,8 @@ try {
 
                 if (newVal !== oldVal) {
                   valArr[0] = newVal ^ valArr[1];
-                  logMsg.push(name + ": " + oldVal + "->" + newVal);
+                  logMsg.push(name + " " + oldVal + " → " + newVal);
+                  console.log(name + " " + oldVal + " -> " + newVal);
                   modified3 = true;
                 }
               };
@@ -344,7 +345,7 @@ try {
                   var comp = item.c[compKey];
                   if (comp && typeof comp.st === 'number' && typeof comp.cd === 'number') {
                     if (comp.cd > 0 && comp.st > 0) {
-                      console.log("🚀加速 " + item.g + " " + new Date((comp.st + 1609430400) * 1000).toISOString() + " - " + comp.cd + "s");
+                      console.log("🚀 " + item.g + " " + new Date((comp.st + 1609430400) * 1000).toLocaleString('zh', {timeZone: "+0800", month: "numeric", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit"}) + " - " + comp.cd * 10 + "s");
                       comp.st = comp.st - comp.cd * 10;
                       modifiedCount++;
                     }

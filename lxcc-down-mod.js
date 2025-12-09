@@ -248,18 +248,20 @@ try {
   if (obj.archives) archives = obj.archives;
   else if (obj.data && obj.data.archives) archives = obj.data.archives;
 
+  var isGlobalModified = false; // 全局修改标记
+  var logMsg = [];
+
   if (archives && Array.isArray(archives)) {
     var mergeThree = archives.find(function (a) { return a.name === "MergeThree"; });
     if (mergeThree && mergeThree.data) {
-      var originalHeader = mergeThree.data.substring(0, 8);
-      var decryptedJsonStr = decryptMerge(mergeThree.data);
-
-      if (decryptedJsonStr) {
-        var mergeData = JSON.parse(decryptedJsonStr);
-        if (Array.isArray(mergeData) && mergeData.length >= 3) {
-          var subArchives = mergeData[2];
+      var header3 = mergeThree.data.substring(0, 8);
+      var json3 = decryptMerge(mergeThree.data);
+      if (json3) {
+        var data3 = JSON.parse(json3);
+        if (Array.isArray(data3) && data3.length >= 3) {
+          var subArchives = data3[2];
           var propsData = null;
-          if (subArchives && Array.isArray(subArchives)) {
+          if (subArchives) {
             for (var i = 0; i < subArchives.length; i++) {
               if (subArchives[i][0] === 1) { propsData = subArchives[i][2]; break; }
             }
@@ -267,104 +269,49 @@ try {
 
           if (propsData) {
             var encryptedProps = propsData[1];
-
             if (encryptedProps && Array.isArray(encryptedProps)) {
-              var isFlatArray = encryptedProps.length > 0 && typeof encryptedProps[0] === 'number';
-              var isModified = false;
-              var modified = "";
-              var TARGET_TAIYI = 279;
+              var modified3 = false;
 
               var modifyFunc = function (k, arr) {
                 var id = arr[k]; var valArr = arr[k + 1];
-                if (id === 10000004 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal > 50) return;
-                  var newVal = oldVal + 125;
+                if (!Array.isArray(valArr)) return;
+
+                var oldVal = valArr[0] ^ valArr[1];
+                var newVal = oldVal;
+                var name = "";
+
+                if (id === 10000004 && oldVal <= 50) { newVal += 125; name = "⚡"; }
+                else if (id === 10000001 && oldVal < 100000) { newVal += 40000; name = "💰"; }
+                else if (id === 10000003 && oldVal < 10000) { newVal += 1280; name = "💎"; }
+                else if (id === 10000008 && oldVal < 200) { newVal += 100; name = "🐸"; }
+                else if (id === 10000009 && oldVal < 10000) { newVal += 1200; name = "🐦"; }
+                else if (id === 10000010 && oldVal < 10000) { newVal += 4000; name = "🐱"; }
+                else if (id === 10000203 && (new Date().getMinutes() % 10 === 0)) { newVal += 1; name = "✌️"; }
+                else if (id === 10000011 && (new Date().getMinutes() % 10 === 0)) { newVal += 1; name = "✂️"; }
+
+                if (newVal !== oldVal) {
                   valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" ⚡ " + oldVal + " -> " + newVal);
-                  isModified = true;
-                } else if (id === 10000001 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 100000) return;
-                  var newVal = oldVal + 40000;
-                  valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" 💰 " + oldVal + " -> " + newVal);
-                  isModified = true;
-                } else if (id === 10000008 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 200) return;
-                  var newVal = oldVal + 100;
-                  valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" 🐸 " + oldVal + " -> " + newVal);
-                  isModified = true;
-                } else if (id === 10000003 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 10000) return;
-                  var newVal = oldVal + 1280;
-                  valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" 💎 " + oldVal + " -> " + newVal);
-                  isModified = true;
-                } else if (id === 10000009 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 10000) return;
-                  var newVal = oldVal + 1200;
-                  valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" 🐦 " + oldVal + " -> " + newVal);
-                  isModified = true;
-                } else if (id === 10000010 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 10000) return;
-                  var newVal = oldVal + 4000;
-                  valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" 🐱 " + oldVal + " -> " + newVal);
-                  isModified = true;
-                } else if (id === 10000203 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 1 || new Date().getMinutes() % 10 !== 0) return;
-                  var newVal = oldVal + 1;
-                  valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" ✌️ " + oldVal + " -> " + newVal);
-                  isModified = true;
-                } else if (id === 10000011 && Array.isArray(valArr)) {
-                  var oldVal = valArr[0] ^ valArr[1];
-                  if (oldVal >= 30 || new Date().getMinutes() % 10 !== 0) return;
-                  var newVal = oldVal + 1;
-                  valArr[0] = newVal ^ valArr[1];
-                  modified = modified + (" ✂️ " + oldVal + " -> " + newVal);
-                  isModified = true;
+                  logMsg.push(name + ": " + oldVal + "->" + newVal);
+                  modified3 = true;
                 }
               };
-              for (var k = 0; k < encryptedProps.length; k += 2) modifyFunc(k, encryptedProps);
 
-              if (isModified) {
-                var newMergeDataStr = JSON.stringify(mergeData);
-                var newEncryptedData = encryptMerge(newMergeDataStr, originalHeader);
+              var isFlat = encryptedProps.length > 0 && typeof encryptedProps[0] === 'number';
+              if (isFlat) {
+                for (var k = 0; k < encryptedProps.length; k += 2) modifyFunc(k, encryptedProps);
+              } else {
+                for (var k = 0; k < encryptedProps.length; k++) {
+                  var item = encryptedProps[k];
+                  if (item) modifyFunc(0, [item[0], item[1]]);
+                }
+              }
 
-                if (newEncryptedData) {
-                  mergeThree.data = newEncryptedData;
-                  body = JSON.stringify(obj);
-                  console.log("✅ Body 数据已修改：" + modified);
-
-                  var timeKey = Object.keys(reqHeaders).find(k => k.toLowerCase() === 'time') ||
-                    Object.keys(reqHeaders).find(k => k.toLowerCase() === 'timestamp') || "time";
-                  var timeVal = reqHeaders[timeKey];
-
-                  if (timeVal) {
-                    var signStr = "appid=" + APP_ID +
-                      "&body=" + body +
-                      "&signkey=" + SIGN_KEY +
-                      "&time=" + timeVal + "&";
-
-                    var newSign = md5(signStr);
-
-                    var signHeaderKey = Object.keys(headers).find(k => k.toLowerCase() === 'sign') || "sign";
-                    headers[signHeaderKey] = newSign;
-
-                    console.log("✅ 签名已更新: " + newSign + " (Time: " + timeVal + ")");
-                    $notify("MergeThree 修改成功", "", modified);
-                  } else {
-                    console.log("❌ 无法获取 time 时间戳");
-                  }
+              if (modified3) {
+                var enc3 = encryptMerge(JSON.stringify(data3), header3);
+                if (enc3) {
+                  mergeThree.data = enc3;
+                  isGlobalModified = true;
+                  console.log("✅ MergeThree 修改完成");
                 }
               }
             }
@@ -372,7 +319,83 @@ try {
         }
       }
     }
+
+    var mergeSix = archives.find(function (a) { return a.name === "MergeSix"; });
+    if (mergeSix && mergeSix.data) {
+      var header6 = mergeSix.data.substring(0, 8);
+      var json6 = decryptMerge(mergeSix.data);
+      if (json6) {
+        var data6 = JSON.parse(json6);
+        if (Array.isArray(data6) && data6.length >= 3) {
+          var subArchives6 = data6[2];
+          var boardData = null;
+          if (subArchives6) {
+            for (var i = 0; i < subArchives6.length; i++) {
+              if (subArchives6[i][0] === 13) { boardData = subArchives6[i][2]; break; }
+            }
+          }
+
+          if (boardData && boardData.g && Array.isArray(boardData.g)) {
+            var modifiedCount = 0;
+            for (var k = 0; k < boardData.g.length; k++) {
+              var item = boardData.g[k];
+              if (item && item.c) {
+                for (var compKey in item.c) {
+                  var comp = item.c[compKey];
+                  if (comp && typeof comp.st === 'number' && typeof comp.cd === 'number') {
+                    if (comp.cd > 0 && comp.st > 0) {
+                      logMsg.push("🚀加速 " + item.g + " " + new Date((155755439.3503379 + 1609430400) * 1000).toLocaleTimeString() + " - " + comp.cd + "s");
+                      comp.st = comp.st - comp.cd;
+                      modifiedCount++;
+                    }
+                  }
+                }
+              }
+            }
+
+            if (modifiedCount > 0) {
+              var enc6 = encryptMerge(JSON.stringify(data6), header6);
+              if (enc6) {
+                mergeSix.data = enc6;
+                isGlobalModified = true;
+                logMsg.push("🚀加速 x" + modifiedCount);
+                console.log("✅ MergeSix 加速完成");
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (isGlobalModified) {
+      console.log("🔄 检测到数据变动，开始统一重签...");
+
+      body = JSON.stringify(obj);
+
+      var timeKey = Object.keys(reqHeaders).find(k => k.toLowerCase() === 'time') ||
+        Object.keys(reqHeaders).find(k => k.toLowerCase() === 'timestamp') || "time";
+      var timeVal = reqHeaders[timeKey];
+
+      if (timeVal) {
+        var signStr = "appid=" + APP_ID +
+          "&body=" + body +
+          "&signkey=" + SIGN_KEY +
+          "&time=" + timeVal + "&";
+
+        var newSign = MD5(signStr);
+
+        var signHeaderKey = Object.keys(headers).find(k => k.toLowerCase() === 'sign') || "sign";
+        headers[signHeaderKey] = newSign;
+
+        console.log("✅ 签名重算完毕: " + newSign);
+        $notify("修改成功", "", logMsg.join(", "));
+      } else {
+        console.log("❌ 签名失败: 无法获取请求头时间戳");
+      }
+    }
   }
-} catch (e) { console.log("❌ " + e.message); }
+} catch (e) {
+  console.log("❌ 脚本运行异常: " + e.message);
+}
 
 $done({ body: body, headers: headers });

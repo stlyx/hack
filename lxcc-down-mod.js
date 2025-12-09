@@ -344,7 +344,7 @@ try {
                   var comp = item.c[compKey];
                   if (comp && typeof comp.st === 'number' && typeof comp.cd === 'number') {
                     if (comp.cd > 0 && comp.st > 0) {
-                      logMsg.push("🚀加速 " + item.g + " " + new Date((155755439.3503379 + 1609430400) * 1000).toLocaleTimeString() + " - " + comp.cd + "s");
+                      logMsg.push("🚀加速 " + item.g + " " + new Date((comp.st + 1609430400) * 1000).toLocaleTimeString() + " - " + comp.cd + "s");
                       comp.st = comp.st - comp.cd;
                       modifiedCount++;
                     }

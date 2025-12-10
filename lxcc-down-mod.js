@@ -153,7 +153,7 @@ try {
                 for (var compKey in item.c) {
                   var comp = item.c[compKey];
                   if (comp && typeof comp.st === 'number' && typeof comp.cd === 'number') {
-                    if (comp.cd > 0 && comp.st > 0 && +new Date() / 1000 - 1609430400 - comp.st > comp.cd * 10) {
+                    if (comp.cd > 0 && comp.st > 0 && +new Date() / 1000 - 1609430400 - comp.st < comp.cd * 10) {
                       console.log("🚀 " + item.g + " " + new Date((comp.st + 1609430400) * 1000).toLocaleString('zh', { timeZone: "+0800", month: "numeric", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " - " + comp.cd * 10 + "s");
                       comp.st = comp.st - comp.cd * 10;
                       modifiedCount++;

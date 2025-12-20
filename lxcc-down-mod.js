@@ -190,6 +190,7 @@ try {
           }
 
           if (shopGoodsData && shopGoodsData.lt && Array.isArray(shopGoodsData.lt)) {
+            var lt = shopGoodsData.lt;
             if (lt[0].length > 0) {
               console.log("♻️ " + lt[0] + " -> []");
               lt[0] = [];

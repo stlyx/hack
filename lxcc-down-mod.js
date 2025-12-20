@@ -139,14 +139,18 @@ try {
         if (Array.isArray(data6) && data6.length >= 3) {
           var subArchives6 = data6[2];
           var boardData = null;
+          var shopGoodsData = null;
+          var catagoryData = null;
           if (subArchives6) {
             for (var i = 0; i < subArchives6.length; i++) {
-              if (subArchives6[i][0] === 13) { boardData = subArchives6[i][2]; break; }
+              if (subArchives6[i][0] === 13) { boardData = subArchives6[i][2]; }
+              else if (subArchives6[i][0] === 18) { catagoryData = subArchives6[i][2]; }
+              else if (subArchives6[i][0] === 23) { shopGoodsData = subArchives6[i][2]; }
             }
           }
 
+          var modifiedCount = 0;
           if (boardData && boardData.g && Array.isArray(boardData.g)) {
-            var modifiedCount = 0;
             for (var k = 0; k < boardData.g.length; k++) {
               var item = boardData.g[k];
               if (item && item.c) {
@@ -162,15 +166,48 @@ try {
                 }
               }
             }
+            logMsg.push("🚀加速 x" + modifiedCount);
+          }
 
-            if (modifiedCount > 0) {
-              var enc6 = encryptMerge(JSON.stringify(data6), header6);
-              if (enc6) {
-                mergeSix.data = enc6;
-                isGlobalModified = true;
-                logMsg.push("🚀加速 x" + modifiedCount);
-                console.log("✅ MergeSix 加速完成");
+          var resetCount = 0;
+          if (catagoryData && catagoryData.gr && Array.isArray(catagoryData.gr)) {
+            for (var k = 0; k < catagoryData.gr.length; k++) {
+              var item = catagoryData.gr[k];
+              if (item && item.g && Array.isArray(item.g)) {
+                for (var ki = 0; ki < item.g.length; ki++) {
+                  var cata = item.g[ki];
+                  if (cata && typeof cata.t === 'number') {
+                    if (cata.t > 0) {
+                      console.log("♻️ " + cata.gi + " " + cata.t + " -> 0");
+                      cata.t = 0;
+                      resetCount++;
+                    }
+                  }
+                }
               }
+            }
+            logMsg.push("♻️重置 x" + resetCount);
+          }
+
+          if (shopGoodsData && shopGoodsData.lt && Array.isArray(shopGoodsData.lt)) {
+            if (lt[0].length > 0) {
+              console.log("♻️ " + lt[0] + " -> []");
+              lt[0] = [];
+              resetCount++;
+            }
+            if (lt[1].length > 0) {
+              console.log("♻️ " + lt[1] + " -> []");
+              lt[1] = [];
+              resetCount++;
+            }
+          }
+
+          if (modifiedCount > 0 || resetCount > 0) {
+            var enc6 = encryptMerge(JSON.stringify(data6), header6);
+            if (enc6) {
+              mergeSix.data = enc6;
+              isGlobalModified = true;
+              console.log("✅ MergeSix 加速完成");
             }
           }
         }

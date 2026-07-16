@@ -90,13 +90,13 @@ try {
                 var name = "";
 
                 if (id === 10000004 && oldVal <= 50) { newVal += 125; name = "⚡"; }
-                else if (id === 10000001 && (oldVal < 100000 || (new Date().getMinutes() % 10 === 0))) { newVal += 40000; name = "💰"; }
+                else if (id === 10000001 && (oldVal < 100000 || (new Date().getMinutes() % 3 === 0))) { newVal += 40000; name = "💰"; }
                 else if (id === 10000003 && oldVal < 10000) { newVal += 1280; name = "💎"; }
                 else if (id === 10000008 && oldVal < 200) { newVal += 100; name = "🐸"; }
                 else if (id === 10000009 && oldVal < 10000) { newVal += 1200; name = "🐦"; }
                 else if (id === 10000010 && oldVal < 10000) { newVal += 4000; name = "🐱"; }
-                else if (id === 10000203 && (new Date().getMinutes() % 10 === 0)) { newVal += 1; name = "✌️"; }
-                else if (id === 10000011 && (new Date().getMinutes() % 10 === 0)) { newVal += 1; name = "✂️"; }
+                else if (id === 10000203 && (new Date().getMinutes() % 3 === 0)) { newVal += 1; name = "✌️"; }
+                else if (id === 10000011 && (new Date().getMinutes() % 3 === 0)) { newVal += 1; name = "✂️"; }
 
                 if (newVal !== oldVal) {
                   valArr[0] = newVal ^ valArr[1];

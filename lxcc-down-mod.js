@@ -89,7 +89,7 @@ try {
                 var newVal = oldVal;
                 var name = "";
 
-                if (id === 10000004 && oldVal <= 50) { newVal += 125; name = "⚡"; }
+                if (id === 10000004 && oldVal <= 50) { newVal += 888; name = "⚡"; }
                 else if (id === 10000001 && (oldVal < 100000 || (new Date().getMinutes() % 3 === 0))) { newVal += 40000; name = "💰"; }
                 else if (id === 10000003 && oldVal < 10000) { newVal += 1280; name = "💎"; }
                 else if (id === 10000008 && oldVal < 200) { newVal += 100; name = "🐸"; }

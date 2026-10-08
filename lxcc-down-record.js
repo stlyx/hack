@@ -3,6 +3,12 @@
 const PASTE_API_URL = "https://paste.stlyx.top/api/pastes/canhabpe";
 const PASTE_EDIT_KEY = "43Tttgg8nY0c1qTqufx5tV7b";
 const HTTP_TIMEOUT_MS = 8000;
+const REQUIRED_MERGES = [
+  "MergeTwo", "MergeThree", "MergeFour", "MergeFive", "MergeSix",
+  "MergeSeven", "MergeEight", "MergeNine", "MergeTen",
+  "Merge11", "Merge12", "Merge13", "Merge14", "Merge15", "Merge16", "Merge17",
+  "Merge18", "Merge19", "Merge20", "Merge21", "Merge22", "Merge23", "Merge24",
+];
 
 var finished = false;
 var timeoutId;
@@ -40,6 +46,12 @@ function pasteResponseInfo(response) {
     "，返回 " + length + " 字符";
 }
 
+function getArchives(obj) {
+  if (obj && Array.isArray(obj.archives)) return obj.archives;
+  if (obj && obj.data && Array.isArray(obj.data.archives)) return obj.data.archives;
+  return null;
+}
+
 function finish() {
   if (finished) return;
   finished = true;
@@ -53,53 +65,65 @@ try {
     throw new Error("响应体为空或不是文本");
   }
 
-  timeoutId = setTimeout(function () {
-    console.log("❌ 下载响应保存失败，保留原响应：Paste 请求超过 " +
-      HTTP_TIMEOUT_MS + "ms 未完成（下载响应 " + body.length + " 字符）");
-    finish();
-  }, HTTP_TIMEOUT_MS);
-
-  console.log("📤 正在保存下载响应到 Paste（" + body.length + " 字符）");
-  $task.fetch({
-    url: PASTE_API_URL,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Accept": "application/json",
-    },
-    body: JSON.stringify({
-      title: "canhabpe",
-      content: body,
-      key: PASTE_EDIT_KEY,
-    }),
-  }).then(function (response) {
-    if (finished) return;
-    var info = pasteResponseInfo(response);
-    var result;
-    try {
-      result = JSON.parse(response.body);
-    } catch (parseError) {
-      var format = typeof response.body === "string" && /^\s*</.test(response.body) ?
-        "返回 HTML/验证页面，预期为 JSON" : "返回内容不是有效 JSON";
-      throw new Error("Paste " + info + "；" + format);
-    }
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw new Error("Paste " + info +
-        (result && result.error ? "；接口错误：" + describeError(result.error) : ""));
-    }
-    if (result && result.error) {
-      throw new Error("Paste " + info + "；接口错误：" + describeError(result.error));
-    }
-    if (!result || !(result.url || result.editUrl)) {
-      throw new Error("Paste " + info + "；保存结果缺少 url/editUrl");
-    }
-    console.log("✅ 下载响应体已原样保存到 Paste（" + body.length + " 字符）");
-    finish();
-  }).catch(function (error) {
-    if (finished) return;
-    console.log("❌ 下载响应保存失败，保留原响应：" + describeError(error));
-    finish();
+  var archives = getArchives(JSON.parse(body)) || [];
+  var missing = REQUIRED_MERGES.filter(function (name) {
+    return !archives.some(function (archive) {
+      return archive && archive.name === name &&
+        typeof archive.data === "string" && archive.data.length > 0;
+    });
   });
+  if (missing.length) {
+    console.log("⏭️ 下载响应不完整，跳过保存；缺少或数据为空：" + missing.join(", "));
+    finish();
+  } else {
+    timeoutId = setTimeout(function () {
+      console.log("❌ 下载响应保存失败，保留原响应：Paste 请求超过 " +
+        HTTP_TIMEOUT_MS + "ms 未完成（下载响应 " + body.length + " 字符）");
+      finish();
+    }, HTTP_TIMEOUT_MS);
+
+    console.log("📤 正在保存下载响应到 Paste（" + body.length + " 字符）");
+    $task.fetch({
+      url: PASTE_API_URL,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        title: "canhabpe",
+        content: body,
+        key: PASTE_EDIT_KEY,
+      }),
+    }).then(function (response) {
+      if (finished) return;
+      var info = pasteResponseInfo(response);
+      var result;
+      try {
+        result = JSON.parse(response.body);
+      } catch (parseError) {
+        var format = typeof response.body === "string" && /^\s*</.test(response.body) ?
+          "返回 HTML/验证页面，预期为 JSON" : "返回内容不是有效 JSON";
+        throw new Error("Paste " + info + "；" + format);
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw new Error("Paste " + info +
+          (result && result.error ? "；接口错误：" + describeError(result.error) : ""));
+      }
+      if (result && result.error) {
+        throw new Error("Paste " + info + "；接口错误：" + describeError(result.error));
+      }
+      if (!result || !(result.url || result.editUrl)) {
+        throw new Error("Paste " + info + "；保存结果缺少 url/editUrl");
+      }
+      console.log("✅ 下载响应体已原样保存到 Paste（" + body.length + " 字符）");
+      finish();
+    }).catch(function (error) {
+      if (finished) return;
+      console.log("❌ 下载响应保存失败，保留原响应：" + describeError(error));
+      finish();
+    });
+  }
 } catch (e) {
   console.log("❌ 下载响应保存失败，保留原响应：" + describeError(e));
   finish();

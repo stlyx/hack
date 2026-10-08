@@ -1,5 +1,5 @@
 // Quantumult X: script-response-body，用于 /api/archive/get。
-// 原样替换下载响应体，使用当前请求的时间戳重新计算响应 sign。
+// 按当前响应已有的 Merge 块替换 data，使用当前请求的时间戳重新计算响应 sign。
 const PASTE_RAW_URL = "https://paste.stlyx.top/canhabpe/raw";
 const APP_ID = "fpsaScCZ";
 const SIGN_KEY = "67da21c2c4159c69f54cabea3c576645";
@@ -31,6 +31,10 @@ function getArchives(obj) {
 }
 
 try {
+  var current = JSON.parse($response.body);
+  var archives = getArchives(current);
+  if (!archives) throw new Error("当前下载响应没有 archives 数组");
+
   var requestHeaders = $request.headers || {};
   var timeKey = findHeader(requestHeaders, "time") || findHeader(requestHeaders, "timestamp");
   var timeVal = timeKey ? requestHeaders[timeKey] : undefined;
@@ -57,12 +61,31 @@ try {
       throw new Error("Paste HTTP " + response.statusCode);
     }
 
-    var body = response.body;
-    if (typeof body !== "string" || !getArchives(JSON.parse(body))) {
+    var savedArchives = typeof response.body === "string" ?
+      getArchives(JSON.parse(response.body)) : null;
+    if (!savedArchives) {
       throw new Error("Paste 中不是有效的档案下载响应");
     }
 
-    // 只校验 JSON，不重新序列化：保留响应原文及现有的档案密文。
+    // 以当前响应为基础，仅替换已有 Merge 块的 data，不增加块或复制其他字段。
+    var replaced = [];
+    archives.forEach(function (archive) {
+      if (!archive || typeof archive.name !== "string" || !/^Merge/.test(archive.name)) return;
+      var saved = savedArchives.find(function (item) {
+        return item && item.name === archive.name &&
+          typeof item.data === "string" && item.data.length > 0;
+      });
+      if (!saved || saved.data === archive.data) return;
+      archive.data = saved.data;
+      replaced.push(archive.name);
+    });
+    if (!replaced.length) {
+      console.log("⏭️ 没有需要替换的同名 Merge 块，保留原响应");
+      finish();
+      return;
+    }
+
+    var body = JSON.stringify(current);
     var responseHeaders = $response.headers || {};
     var headers = {};
     Object.keys(responseHeaders).forEach(function (key) {
@@ -79,7 +102,7 @@ try {
     var signKey = findHeader(headers, "sign") || "sign";
     headers[signKey] = md5(signStr);
 
-    console.log("✅ 已从 Paste 原样替换下载响应体并重算响应签名");
+    console.log("✅ 已替换 " + replaced.length + " 个 Merge 块并重算响应签名：" + replaced.join(", "));
     finish({ body: body, headers: headers });
   }).catch(function (error) {
     if (finished) return;
